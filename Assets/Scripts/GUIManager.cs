@@ -4,7 +4,6 @@ using System.Collections;
 public class GUIManager : MonoBehaviour
 {
 
-//	public GUISkin guiskin;
 	Manager manager;
 
 	bool error = false;
@@ -13,7 +12,7 @@ public class GUIManager : MonoBehaviour
 	void Start ()
 	{
 
-		manager = gameObject.GetComponent<Manager>();
+		manager = GameObject.FindGameObjectWithTag ( "Manager" ).GetComponent<Manager>();
 	}
 
 	void OnGUI ()
@@ -39,7 +38,7 @@ public class GUIManager : MonoBehaviour
 					error = true;
 				} else {
 
-
+					Network.Connect ( manager.textfieldIP, 25565 );
 				}
 			}
 		}
