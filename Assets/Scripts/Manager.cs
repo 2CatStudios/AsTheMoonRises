@@ -45,4 +45,8 @@ public class Manager : MonoBehaviour
 			UnityEngine.Debug.Log ( "willPlay && lastWillPlay == false" );
 		}
 	}
+
+	void OnPlayerConnected(NetworkPlayer player) {
+		Debug.Log( player.ipAddress + " Connected through " + player.port);
+	}
 }
