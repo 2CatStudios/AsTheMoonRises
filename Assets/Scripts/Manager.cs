@@ -33,7 +33,6 @@ public class Manager : MonoBehaviour
 
 				UnityEngine.Debug.Log ( "Server Enabled" );
 			}
-			UnityEngine.Debug.Log ( "willPlay && lastWillPlay == true" );
 
 		} else {
 
@@ -45,7 +44,7 @@ public class Manager : MonoBehaviour
 
 				UnityEngine.Debug.Log ( "Server Disabled" );
 			}
-			UnityEngine.Debug.Log ( "willPlay && lastWillPlay == false" );
+
 		}
 	}
 
@@ -56,7 +55,8 @@ public class Manager : MonoBehaviour
 		{
 
 			UnityEngine.Debug.Log ( "Message Sent" );
-			networkView.RPC ( "RecieveMessage", RPCMode.All, message );
+			networkView.RPC ( "RecieveMessage", RPCMode.All, moniker + ": " + message );
+			message = "";
 
 		}
 	}
@@ -65,7 +65,7 @@ public class Manager : MonoBehaviour
 	void RecieveMessage (string recievedMessage)
 	{
 
-		Debug.Log ( moniker + ": " + recievedMessage );
+		Debug.Log ( recievedMessage );
 	}
 
 	void OnPlayerConnected ( NetworkPlayer player )
