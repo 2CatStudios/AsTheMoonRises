@@ -44,6 +44,8 @@ public class GUIManager : MonoBehaviour
 		}
 		manager.moniker = GUI.TextField ( new Rect ( 100, 280, 100, 20 ), manager.moniker );
 
+		manager.message = GUI.TextField ( new Rect ( Screen.width/2 - 250, Screen.height/2 + 40, 500, 40 ), manager.message );
+
 		if ( error == true )
 		{
 
