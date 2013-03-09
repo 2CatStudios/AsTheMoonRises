@@ -52,9 +52,10 @@ public class Manager : MonoBehaviour
 	void Update ()
 	{
 
-		if ( Input.GetKeyDown ( KeyCode.Return ))
+		if ( Input.GetButtonDown ( "Return" ))
 		{
 
+			UnityEngine.Debug.Log ( "Message Sent" );
 			networkView.RPC ( "RecieveMessage", RPCMode.All, message );
 
 		}
@@ -64,7 +65,7 @@ public class Manager : MonoBehaviour
 	void RecieveMessage (string recievedMessage)
 	{
 
-		Debug.Log ( "Message| " + recievedMessage );
+		Debug.Log ( moniker + ": " + recievedMessage );
 	}
 
 	void OnPlayerConnected ( NetworkPlayer player )
