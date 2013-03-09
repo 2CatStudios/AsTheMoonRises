@@ -25,7 +25,7 @@ public class Manager : MonoBehaviour
 			if ( lastWillPlay == false )
 			{
 
-				Network.InitializeServer ( 2, 25000, false );
+				Network.InitializeServer ( 2, 25565, false );
 				lastWillPlay = true;
 
 				UnityEngine.Debug.Log ( "Server Enabled" );
@@ -47,6 +47,6 @@ public class Manager : MonoBehaviour
 	}
 
 	void OnPlayerConnected(NetworkPlayer player) {
-		Debug.Log( player.ipAddress + " Connected through " + player.port);
+		Debug.Log( player.ipAddress + " Connected through " + player.port );
 	}
 }
