@@ -5,18 +5,21 @@ public class GUIManager : MonoBehaviour
 {
 
 	Manager manager;
+	NotificationManager notificationManager;
 
-	bool error = false;
-	string errorReason = "";
+	public GUISkin guiskin;
 
 	void Start ()
 	{
 
 		manager = GameObject.FindGameObjectWithTag ( "Manager" ).GetComponent<Manager>();
+		notificationManager = GameObject.FindGameObjectWithTag ( "Manager" ).GetComponent<NotificationManager>();
 	}
 
 	void OnGUI ()
 	{
+
+		GUI.skin = guiskin;
 
 		manager.willPlay = GUI.Toggle ( new Rect ( 100, 200, 110, 20 ), manager.willPlay, "Enable Hosting" );
 		GUI.Label ( new Rect ( 140, 215, 30, 20), "Or" );
@@ -27,47 +30,39 @@ public class GUIManager : MonoBehaviour
 			if ( manager.textfieldIP == "192.168.1.1" )
 			{
 
-				errorReason = "Please enter an IP address and try again.";
-				error = true;
+				notificationManager.notificationText = "Please enter an IP address and try again.";
+				notificationManager.error = true;
 			} else {
 
 				if ( manager.moniker == "Moniker" )
 				{
 
-					errorReason = "Please enter a moniker ( name ) and try again.";
-					error = true;
+					notificationManager.notificationText = "Please enter a moniker ( name ) and try again.";
+					notificationManager.error = true;
 				} else {
 
 					Network.Connect ( manager.textfieldIP, 25565 );
 				}
 			}
 		}
-		manager.moniker = GUI.TextField ( new Rect ( 100, 280, 100, 20 ), manager.moniker );
 
+		if ( Event.current.type ==  EventType.KeyDown && ( Event.current.keyCode == KeyCode.Return ))
+		{
+			
+			UnityEngine.Debug.Log ( "Message Sent" );
+			manager.networkView.RPC ( "RecieveMessage", RPCMode.All, manager.moniker + ": " + manager.message );
+			manager.message = "";
+		}
+
+		manager.moniker = GUI.TextField ( new Rect ( 100, 280, 100, 20 ), manager.moniker );
 		manager.message = GUI.TextField ( new Rect ( Screen.width/2 - 250, Screen.height/2 + 40, 500, 40 ), manager.message );
-		if ( GUI.Button ( new Rect ( Screen.width/2 - 300, Screen.height/2 + 40, 40, 40), "Send" ))
+
+		if ( GUI.Button ( new Rect ( Screen.width/2 - 300, Screen.height/2 + 40, 50, 40), "Send" ))
 		{
 
 			UnityEngine.Debug.Log ( "Message Sent" );
 			manager.networkView.RPC ( "RecieveMessage", RPCMode.All, manager.moniker + ": " + manager.message );
 			manager.message = "";
 		}
-
-		if ( error == true )
-		{
-
-			GUI.Window ( 0, new Rect ( Screen.width/2 - 150, Screen.height/2 - 50, 300, 100 ), Error, "An error prevented your desired action!" );
-			GUI.FocusWindow (0);
-		}
-	}
-
-	void Error (int wid)
-	{
-
-		GUI.skin.label.alignment = TextAnchor.MiddleCenter;
-
-		GUI.Label ( new Rect ( 0, 15, 300, 40 ), errorReason );
-		if ( GUI.Button ( new Rect ( 125, 50, 50, 20 ), "Okay" ))
-			error = false;
 	}
 }

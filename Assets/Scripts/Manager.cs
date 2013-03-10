@@ -4,9 +4,9 @@ using System.Collections;
 public class Manager : MonoBehaviour
 {
 
+	NotificationManager notificationManager;
+
 	internal bool willPlay = false;
-//	bool hosting = false;
-//	bool connected = false;
 
 	bool lastWillPlay = false;
 	internal string textfieldIP = "192.168.1.1";
@@ -17,6 +17,7 @@ public class Manager : MonoBehaviour
 	{
 
 		InvokeRepeating ( "ServerControl", 0, 2 );
+		notificationManager = gameObject.GetComponent<NotificationManager>();
 	}
 
 	void ServerControl ()
@@ -28,10 +29,19 @@ public class Manager : MonoBehaviour
 			if ( lastWillPlay == false )
 			{
 
-				Network.InitializeServer ( 2, 25565, false );
-				lastWillPlay = true;
+				if ( moniker == "Moniker" )
+				{
 
-				UnityEngine.Debug.Log ( "Server Enabled" );
+					notificationManager.error = true;
+					notificationManager.notificationText = "Please enter a moniker ( name ) and try again.";
+					willPlay = false;
+				} else {
+
+					Network.InitializeServer ( 2, 25565, false );
+					lastWillPlay = true;
+
+					UnityEngine.Debug.Log ( "Server Enabled" );
+				}
 			}
 
 		} else {
@@ -44,19 +54,6 @@ public class Manager : MonoBehaviour
 
 				UnityEngine.Debug.Log ( "Server Disabled" );
 			}
-
-		}
-	}
-
-	void Update ()
-	{
-
-		if ( Input.GetButtonDown ( "Return" ))
-		{
-
-			UnityEngine.Debug.Log ( "Message Sent" );
-			networkView.RPC ( "RecieveMessage", RPCMode.All, moniker + ": " + message );
-			message = "";
 
 		}
 	}
