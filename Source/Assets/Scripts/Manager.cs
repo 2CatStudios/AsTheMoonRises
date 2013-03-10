@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using System.Collections;
 //Written by Gibson Bethke
@@ -5,6 +6,9 @@ public class Manager : MonoBehaviour
 {
 
 	NotificationManager notificationManager;
+	GUIManager guimanager;
+
+	public float runningVersion = 0.01f;
 
 	internal bool willPlay = false;
 	bool lastWillPlay = false;
@@ -21,6 +25,7 @@ public class Manager : MonoBehaviour
 
 		InvokeRepeating ( "ServerControl", 0, 2 );
 		notificationManager = gameObject.GetComponent<NotificationManager>();
+		guimanager = GameObject.FindGameObjectWithTag ( "MainCamera" ).GetComponent<GUIManager>();
 	}
 
 	void ServerControl ()
@@ -42,7 +47,7 @@ public class Manager : MonoBehaviour
 
 					Network.InitializeServer ( 2, 25565, false );
 					lastWillPlay = true;
-					hosting =  true;
+					hosting = true;
 					connecting = false;
 
 					UnityEngine.Debug.Log ( "Server Enabled" );
@@ -56,10 +61,11 @@ public class Manager : MonoBehaviour
 
 				Network.Disconnect();
 				lastWillPlay = false;
+				hosting = false;
+				connecting = false;
 
 				UnityEngine.Debug.Log ( "Server Disabled" );
 			}
-
 		}
 	}
 
@@ -67,7 +73,8 @@ public class Manager : MonoBehaviour
 	void RecieveMessage (string recievedMessage)
 	{
 
-		Debug.Log ( recievedMessage );
+		guimanager.messageList.Add ( recievedMessage );
+		guimanager.scrollPosition.y += 100;
 	}
 
 	void OnPlayerConnected ( NetworkPlayer player )
