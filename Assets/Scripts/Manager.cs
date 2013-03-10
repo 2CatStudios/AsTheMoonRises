@@ -7,8 +7,11 @@ public class Manager : MonoBehaviour
 	NotificationManager notificationManager;
 
 	internal bool willPlay = false;
-
 	bool lastWillPlay = false;
+
+	internal bool hosting = false;
+	internal bool connecting = false;
+
 	internal string textfieldIP = "192.168.1.1";
 	internal string moniker = "Moniker";
 	internal string message = "DebugLog Chat!";
@@ -39,6 +42,8 @@ public class Manager : MonoBehaviour
 
 					Network.InitializeServer ( 2, 25565, false );
 					lastWillPlay = true;
+					hosting =  true;
+					connecting = false;
 
 					UnityEngine.Debug.Log ( "Server Enabled" );
 				}
