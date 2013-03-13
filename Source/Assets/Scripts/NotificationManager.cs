@@ -22,6 +22,7 @@ public class NotificationManager : MonoBehaviour
 			
 			GUI.Window ( 0, new Rect ( Screen.width/2 - 150, 150, 300, 75 ), Error, "An error prevented your desired action!" );
 			GUI.FocusWindow ( 0 );
+			GUI.BringWindowToFront ( 0 );
 		}
 
 		if ( prompt == true )
@@ -29,6 +30,7 @@ public class NotificationManager : MonoBehaviour
 
 			GUI.Window ( 1, new Rect ( Screen.width/2 - 150, 150, 300, 75 ), Prompt, "Note:" );
 			GUI.FocusWindow ( 1 );
+			GUI.BringWindowToFront ( 1 );
 		}
 
 		if ( message == true )
@@ -37,6 +39,7 @@ public class NotificationManager : MonoBehaviour
 			GUI.Window ( 2, new Rect ( Screen.width/2 - 150, 150, 300, 75 ), TempWindow, "An error prevented your desired action!" );
 			StartCoroutine ( "TempWindowTimeOut" );
 			GUI.FocusWindow ( 2 );
+			GUI.BringWindowToFront ( 2 );
 		}
 	}
 

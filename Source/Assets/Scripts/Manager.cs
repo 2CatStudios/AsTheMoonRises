@@ -125,7 +125,7 @@ public class Manager : MonoBehaviour
 				textwriter.WriteLine ( tempSettingsString[0] + Environment.NewLine + tempSettingsString[1] + Environment.NewLine + DateTime.Today );
 				textwriter.Close ();
 	
-				networkView.RPC ( "RecieveMessage", RPCMode.All, "Chat started at " + DateTime.Now );
+				networkView.RPC ( "RecieveMessage", RPCMode.AllBuffered, "Chat started at " + DateTime.Now );
 			}
 		} else {
 
@@ -146,6 +146,64 @@ public class Manager : MonoBehaviour
 			guimanager.messageList.Clear ();
 		}
 	}
+
+
+	void ConnectionControl ()
+	{
+
+		if ( connecting == false )
+		{
+			
+			if ( textfieldIP == "192.168.1.1" || String.IsNullOrEmpty ( textfieldIP.Trim ()) )
+			{
+				
+				notificationManager.notificationText = "Please enter an IP address and try again.";
+				notificationManager.error = true;
+			} else {
+				if ( moniker == "Moniker" || String.IsNullOrEmpty ( moniker.Trim ()))
+				{
+					
+					notificationManager.notificationText = "Please change your moniker ( name ) and try again.";
+					notificationManager.error = true;
+				} else {
+				
+					Network.Connect ( textfieldIP, 25565 );
+					hosting = false;
+					connecting = true;
+				
+					currentChatPath = chatLogsPath + Path.DirectorySeparatorChar + DateTime.Today.Day + ":" + DateTime.Today.Month + ":" + DateTime.Today.Year + " " + totalChatsToday + ".txt";
+					lastChatDate = DateTime.Today;
+				
+					String[] tempSettingsString = File.ReadAllLines ( supportFilesPath + Path.DirectorySeparatorChar + "Settings.txt" );
+					tempSettingsString[0] = moniker;
+				
+					StreamWriter textwriter = new StreamWriter ( supportFilesPath + Path.DirectorySeparatorChar + "Settings.txt", false );
+					textwriter.WriteLine ( tempSettingsString[0] + Environment.NewLine + tempSettingsString[1] + Environment.NewLine + DateTime.Today );
+					textwriter.Close ();
+				
+					networkView.RPC ( "RecieveMessage", RPCMode.All, moniker + " has joined this chat." );
+				}
+			}
+		} else {
+			
+			Network.Disconnect();
+			hosting = false;
+			connecting = false;
+			
+			totalChatsToday++;
+			String[] tempSettingsString = File.ReadAllLines ( supportFilesPath + Path.DirectorySeparatorChar + "Settings.txt" );
+			tempSettingsString[1] = totalChatsToday.ToString ();
+			
+			StreamWriter textwriter = new StreamWriter ( supportFilesPath + Path.DirectorySeparatorChar + "Settings.txt", false );
+			textwriter.WriteLine ( tempSettingsString[0] + Environment.NewLine + tempSettingsString[1] + Environment.NewLine + DateTime.Today );
+			textwriter.Close ();
+
+			networkView.RPC ( "RecieveMessage", RPCMode.All, moniker + " has left this chat." );
+
+			guimanager.messageList.Clear ();
+		}
+	}
+
 
 	[RPC]
 	void RecieveMessage (string recievedMessage)

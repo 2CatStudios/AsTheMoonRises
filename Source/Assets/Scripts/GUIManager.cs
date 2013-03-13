@@ -19,7 +19,6 @@ public class GUIManager : MonoBehaviour
 
 
 	/*
-
 		GUI.Window 0 is Error
 		GUI.Window 1 is Prompt
 		GUI.Window 2 is Message
@@ -50,28 +49,9 @@ public class GUIManager : MonoBehaviour
 			GUI.Label ( new Rect ( 140, 218, 30, 20), "Or" );
 
 			manager.textfieldIP = GUI.TextField ( new Rect ( 100, 255, 100, 20 ), manager.textfieldIP );
+
 			if ( GUI.Button ( new Rect ( 100, 235, 100, 20 ), "Connect to IP" ))
-			{
-				
-				if ( manager.textfieldIP == "192.168.1.1" || String.IsNullOrEmpty ( manager.textfieldIP.Trim ()) )
-				{
-					
-					notificationManager.notificationText = "Please enter an IP address and try again.";
-					notificationManager.error = true;
-				} else {
-					
-					if ( manager.moniker == "Moniker" || String.IsNullOrEmpty ( manager.moniker.Trim ()))
-					{
-						
-						notificationManager.notificationText = "Please change your moniker ( name ) and try again.";
-						notificationManager.error = true;
-					} else {
-						
-						Network.Connect ( manager.textfieldIP, 25565 );
-						manager.connecting = true;
-					}
-				}
-			}
+				manager.SendMessage ( "ConnectionControl" );
 
 			if ( GUI.Button ( new Rect ( 100, 275, 100, 20 ), "Save IP" ))
 				manager.SendMessage ( "SaveIP" );
@@ -91,6 +71,13 @@ public class GUIManager : MonoBehaviour
 
 			if ( GUI.Button ( new Rect ( 130, 400, 110, 20 ), "Disable Hosting" ))
 				manager.SendMessage ( "ServerControl" );
+		}
+
+		if ( manager.connecting == true )
+		{
+			
+			if ( GUI.Button ( new Rect ( 130, 400, 110, 20 ), "Disconnect" ))
+				manager.SendMessage ( "ConnectionControl" );
 		}
 	}
 
@@ -114,7 +101,7 @@ public class GUIManager : MonoBehaviour
 					notificationManager.error = true;
 				} else {
 					
-					Network.Connect ( manager.textfieldIP, 25565 );
+					Network.Connect ( savedIPs[tempInt], 25565 );
 					manager.connecting = true;
 				}
 			}
