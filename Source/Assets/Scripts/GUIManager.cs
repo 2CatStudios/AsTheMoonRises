@@ -7,7 +7,6 @@ public class GUIManager : MonoBehaviour
 {
 
 	Manager manager;
-	NotificationManager notificationManager;
 
 	internal Vector2 chatScrollPosition;
 	internal List<String> messageList = new List<String>();
@@ -31,7 +30,6 @@ public class GUIManager : MonoBehaviour
 	{
 
 		manager = GameObject.FindGameObjectWithTag ( "Manager" ).GetComponent<Manager>();
-		notificationManager = GameObject.FindGameObjectWithTag ( "Manager" ).GetComponent<NotificationManager>();
 	}
 
 
@@ -77,7 +75,7 @@ public class GUIManager : MonoBehaviour
 		{
 			
 			if ( GUI.Button ( new Rect ( 130, 400, 110, 20 ), "Disconnect" ))
-				manager.SendMessage ( "ConnectionControl" );
+				manager.SendMessage ( "ConnectionControl", manager.textfieldIP );
 		}
 	}
 
@@ -92,19 +90,7 @@ public class GUIManager : MonoBehaviour
 		{
 
 			if ( GUILayout.Button ( savedIPs[tempInt] ))
-			{
-
-				if ( manager.moniker == "Moniker" || String.IsNullOrEmpty ( manager.moniker.Trim ()))
-				{
-					
-					notificationManager.notificationText = "Please enter a moniker ( name ) and try again.";
-					notificationManager.error = true;
-				} else {
-					
-					Network.Connect ( savedIPs[tempInt], 25565 );
-					manager.connecting = true;
-				}
-			}
+				manager.SendMessage ( "ConnectionControl", savedIPs[tempInt] );
 			tempInt++;
 		}
 
