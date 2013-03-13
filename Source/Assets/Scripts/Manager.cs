@@ -148,7 +148,7 @@ public class Manager : MonoBehaviour
 	}
 
 
-	void ConnectionControl ( string ipToConnect )
+	void ConnectionControl ()
 	{
 
 		if ( connecting == false )
@@ -167,7 +167,7 @@ public class Manager : MonoBehaviour
 					notificationManager.error = true;
 				} else {
 				
-					Network.Connect ( ipToConnect, 25565 );
+					Network.Connect ( textfieldIP, 25565 );
 					hosting = false;
 					connecting = true;
 				

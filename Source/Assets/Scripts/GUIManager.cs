@@ -55,7 +55,7 @@ public class GUIManager : MonoBehaviour
 				manager.SendMessage ( "SaveIP" );
 
 			manager.moniker = GUI.TextField ( new Rect ( 100, 315, 100, 20 ), manager.moniker );
-			GUI.Window ( 4, new Rect ( 300, 250, 400, 180 ), SavedIPs, "Saved public IPs" );
+			GUI.Window ( 4, new Rect ( 300, 250, 400, 180 ), SavedIPs, "Saved IP Addresses" );
 		}
 
 		if ( manager.hosting == true || manager.connecting == true )
@@ -75,7 +75,7 @@ public class GUIManager : MonoBehaviour
 		{
 			
 			if ( GUI.Button ( new Rect ( 130, 400, 110, 20 ), "Disconnect" ))
-				manager.SendMessage ( "ConnectionControl", manager.textfieldIP );
+				manager.SendMessage ( "ConnectionControl" );
 		}
 	}
 
@@ -90,7 +90,7 @@ public class GUIManager : MonoBehaviour
 		{
 
 			if ( GUILayout.Button ( savedIPs[tempInt] ))
-				manager.SendMessage ( "ConnectionControl", savedIPs[tempInt] );
+				manager.textfieldIP = savedIPs[tempInt];
 			tempInt++;
 		}
 
