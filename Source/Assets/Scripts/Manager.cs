@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 //Written by Gibson Bethke
 public class Manager : MonoBehaviour
 {
@@ -16,18 +17,16 @@ public class Manager : MonoBehaviour
 	GUIManager guimanager;
 
 	public float runningVersion = 0.01f;
-
-	internal bool willPlay = false;
-	bool lastWillPlay = false;
-
+	
 	internal bool hosting = false;
 	internal bool connecting = false;
 
 	internal string textfieldIP = "192.168.1.1";
-	internal string moniker = "Moniker";
+	internal string moniker;
 	internal string message = "Enter smack-talk here";
 
-	internal int totalChats;
+	DateTime lastChatDate;
+	internal int totalChatsToday;
 	internal string currentChatPath;
 
 	void Start ()
@@ -53,70 +52,98 @@ public class Manager : MonoBehaviour
 		{
 
 			StreamWriter textwriter = new StreamWriter ( supportFilesPath + Path.DirectorySeparatorChar + "Settings.txt", false );
-			textwriter.WriteLine ( "Moniker" + Environment.NewLine + "0" );
+			textwriter.WriteLine ( "Moniker" + Environment.NewLine + "0" + Environment.NewLine + DateTime.Today );
 			textwriter.Close ();
 		}
 
-		moniker = File.ReadAllLines ( supportFilesPath + Path.DirectorySeparatorChar + "Settings.txt" )[0];
-		totalChats = Convert.ToInt32 ( File.ReadAllLines ( supportFilesPath + Path.DirectorySeparatorChar + "Settings.txt" )[1]);
+		String[] tempSettingsString = File.ReadAllLines ( supportFilesPath + Path.DirectorySeparatorChar + "Settings.txt" );
+		moniker = tempSettingsString[0];
+		totalChatsToday = Convert.ToInt32 ( tempSettingsString[1] );
+		lastChatDate = Convert.ToDateTime ( tempSettingsString[2] );
 
 		if ( !File.Exists ( supportFilesPath + Path.DirectorySeparatorChar + "SavedIPs.txt" ))
-		{
-			
 			File.Create ( supportFilesPath + Path.DirectorySeparatorChar + "SavedIPs.txt" );
-		}
-
-		InvokeRepeating ( "ServerControl", 0, 2 );
-
-		currentChatPath = chatLogsPath + Path.DirectorySeparatorChar + DateTime.Today.Day + ":" + DateTime.Today.Month + ":" + DateTime.Today.Year + " " + totalChats + ".txt";
-	}
-
-	void ServerControl ()
-	{
-		
-		if ( willPlay == true )
+		else
 		{
 
-			if ( lastWillPlay == false )
+			String[] tempSavedIPsString;
+			tempSavedIPsString = File.ReadAllLines ( supportFilesPath + Path.DirectorySeparatorChar + "SavedIPs.txt" );
+
+			if ( tempSavedIPsString.Length != 0 )
 			{
 
-				if ( moniker == "Moniker" )
+				int savedIPsInt = 0;
+				while ( savedIPsInt < tempSavedIPsString.Length )
 				{
 
-					notificationManager.error = true;
-					notificationManager.notificationText = "Please enter a moniker ( name ) and try again.";
-					willPlay = false;
-				} else {
-
-					Network.InitializeServer ( 2, 25565, false );
-					lastWillPlay = true;
-					hosting = true;
-					connecting = false;
-
-					networkView.RPC ( "RecieveMessage", RPCMode.All, "Server created at " + DateTime.Now );
-
-					UnityEngine.Debug.Log ( "Server Enabled" );
+					guimanager.savedIPs.Add ( tempSavedIPsString[savedIPsInt] );
+					savedIPsInt++;
 				}
 			}
+		}
 
-		} else {
+		if ( lastChatDate != DateTime.Today )
+			totalChatsToday = 0;
+	}
 
-			if ( lastWillPlay == true )
+
+	void SaveIP ()
+	{
+
+		StreamWriter textwriter = new StreamWriter ( supportFilesPath + Path.DirectorySeparatorChar + "SavedIPs.txt", true );
+		textwriter.WriteLine ( textfieldIP );
+		textwriter.Close ();
+
+		guimanager.savedIPs.Add ( textfieldIP );
+	}
+	
+	
+	void ServerControl ()
+	{
+
+		if ( hosting == false )
+		{
+
+			if ( moniker == "Moniker" || String.IsNullOrEmpty ( moniker.Trim ()) )
 			{
 
-				networkView.RPC ( "RecieveMessage", RPCMode.All, "Chat ended at " + DateTime.Now );
+				notificationManager.error = true;
+				notificationManager.notificationText = "Please change your moniker ( name ) and try again.";
+			} else {
 
-				Network.Disconnect();
-				lastWillPlay = false;
-				hosting = false;
+				Network.InitializeServer ( 2, 25565, false );
+				hosting = true;
 				connecting = false;
 
-				totalChats++;
+				currentChatPath = chatLogsPath + Path.DirectorySeparatorChar + DateTime.Today.Day + ":" + DateTime.Today.Month + ":" + DateTime.Today.Year + " " + totalChatsToday + ".txt";
+				lastChatDate = DateTime.Today;
 
-				guimanager.messageList.Clear ();
-
-				UnityEngine.Debug.Log ( "Server Disabled" );
+				String[] tempSettingsString = File.ReadAllLines ( supportFilesPath + Path.DirectorySeparatorChar + "Settings.txt" );
+				tempSettingsString[0] = moniker;
+				
+				StreamWriter textwriter = new StreamWriter ( supportFilesPath + Path.DirectorySeparatorChar + "Settings.txt", false );
+				textwriter.WriteLine ( tempSettingsString[0] + Environment.NewLine + tempSettingsString[1] + Environment.NewLine + DateTime.Today );
+				textwriter.Close ();
+	
+				networkView.RPC ( "RecieveMessage", RPCMode.All, "Chat started at " + DateTime.Now );
 			}
+		} else {
+
+			networkView.RPC ( "RecieveMessage", RPCMode.All, "Chat ended at " + DateTime.Now );
+
+			Network.Disconnect();
+			hosting = false;
+			connecting = false;
+
+			totalChatsToday++;
+			String[] tempSettingsString = File.ReadAllLines ( supportFilesPath + Path.DirectorySeparatorChar + "Settings.txt" );
+			tempSettingsString[1] = totalChatsToday.ToString ();
+
+			StreamWriter textwriter = new StreamWriter ( supportFilesPath + Path.DirectorySeparatorChar + "Settings.txt", false );
+			textwriter.WriteLine ( tempSettingsString[0] + Environment.NewLine + tempSettingsString[1] + Environment.NewLine + DateTime.Today );
+			textwriter.Close ();
+
+			guimanager.messageList.Clear ();
 		}
 	}
 
@@ -129,18 +156,18 @@ public class Manager : MonoBehaviour
 		textwriter.Close ();
 
 		guimanager.messageList.Add ( recievedMessage );
-		guimanager.scrollPosition.y += Mathf.Infinity;
+		guimanager.chatScrollPosition.y += Mathf.Infinity;
 	}
 
 	void OnPlayerConnected ( NetworkPlayer player )
 	{
 
-		Debug.Log ( player.ipAddress + " Connected through " + player.port );
+		Debug.Log ( player.ipAddress + " Connected through| " + player.port );
 	}
 
 	void OnFailedToConnect ( NetworkConnectionError error )
 	{
 
-		Debug.LogWarning ( "Could not connect to server: " + error );
+		Debug.LogWarning ( "Couldn't connect to server| " + error );
 	}
 }

@@ -20,21 +20,21 @@ public class NotificationManager : MonoBehaviour
 		if ( error == true )
 		{
 			
-			GUI.Window ( 0, new Rect ( Screen.width/2 - 150, Screen.height/2 - 50, 300, 75 ), Error, "An error prevented your desired action!" );
+			GUI.Window ( 0, new Rect ( Screen.width/2 - 150, 150, 300, 75 ), Error, "An error prevented your desired action!" );
 			GUI.FocusWindow ( 0 );
 		}
 
 		if ( prompt == true )
 		{
 
-			GUI.Window ( 1, new Rect ( Screen.width/2 - 150, Screen.height/2 - 50, 300, 75 ), Prompt, "Note:" );
+			GUI.Window ( 1, new Rect ( Screen.width/2 - 150, 150, 300, 75 ), Prompt, "Note:" );
 			GUI.FocusWindow ( 1 );
 		}
 
 		if ( message == true )
 		{
 			
-			GUI.Window ( 2, new Rect ( Screen.width/2 - 150, Screen.height/2 - 50, 300, 75 ), TempWindow, "An error prevented your desired action!" );
+			GUI.Window ( 2, new Rect ( Screen.width/2 - 150, 150, 300, 75 ), TempWindow, "An error prevented your desired action!" );
 			StartCoroutine ( "TempWindowTimeOut" );
 			GUI.FocusWindow ( 2 );
 		}

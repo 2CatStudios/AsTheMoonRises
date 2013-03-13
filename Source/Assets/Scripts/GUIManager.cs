@@ -9,10 +9,24 @@ public class GUIManager : MonoBehaviour
 	Manager manager;
 	NotificationManager notificationManager;
 
-	internal Vector2 scrollPosition;
+	internal Vector2 chatScrollPosition;
 	internal List<String> messageList = new List<String>();
+
+	Vector2 savedIPsScrollPosition;
+	internal List<String> savedIPs = new List<String>();
 	
 	public GUISkin guiskin;
+
+
+	/*
+
+		GUI.Window 0 is Error
+		GUI.Window 1 is Prompt
+		GUI.Window 2 is Message
+		GUI.Window 3 is ChatBar
+		GUI.Window 4 is SavedIPs
+	*/
+
 
 	void Start ()
 	{
@@ -27,38 +41,43 @@ public class GUIManager : MonoBehaviour
 
 		GUI.skin = guiskin;
 
-		if ( manager.connecting == false )
-			manager.willPlay = GUI.Toggle ( new Rect ( 100, 200, 110, 20 ), manager.willPlay, "Enable Hosting" );
-
 		if ( manager.connecting == false && manager.hosting == false )
-			GUI.Label ( new Rect ( 140, 215, 30, 20), "Or" );
-
-		if ( manager.hosting == false )
 		{
 
-			manager.textfieldIP = GUI.TextField ( new Rect ( 100, 235, 100, 20 ), manager.textfieldIP );
-			if ( GUI.Button ( new Rect ( 100, 255, 100, 20 ), "Connect to IP" ))
-			{
+			if ( GUI.Button ( new Rect ( 100, 200, 100, 20 ), "Enable Hosting" ))
+				manager.SendMessage ( "ServerControl" );
 
+			GUI.Label ( new Rect ( 140, 218, 30, 20), "Or" );
+
+			manager.textfieldIP = GUI.TextField ( new Rect ( 100, 255, 100, 20 ), manager.textfieldIP );
+			if ( GUI.Button ( new Rect ( 100, 235, 100, 20 ), "Connect to IP" ))
+			{
+				
 				if ( manager.textfieldIP == "192.168.1.1" || String.IsNullOrEmpty ( manager.textfieldIP.Trim ()) )
 				{
-
+					
 					notificationManager.notificationText = "Please enter an IP address and try again.";
 					notificationManager.error = true;
 				} else {
-
+					
 					if ( manager.moniker == "Moniker" || String.IsNullOrEmpty ( manager.moniker.Trim ()))
 					{
-
-						notificationManager.notificationText = "Please enter a moniker ( name ) and try again.";
+						
+						notificationManager.notificationText = "Please change your moniker ( name ) and try again.";
 						notificationManager.error = true;
 					} else {
-
+						
 						Network.Connect ( manager.textfieldIP, 25565 );
 						manager.connecting = true;
 					}
 				}
 			}
+
+			if ( GUI.Button ( new Rect ( 100, 275, 100, 20 ), "Save IP" ))
+				manager.SendMessage ( "SaveIP" );
+
+			manager.moniker = GUI.TextField ( new Rect ( 100, 315, 100, 20 ), manager.moniker );
+			GUI.Window ( 4, new Rect ( 300, 250, 400, 180 ), SavedIPs, "Saved public IPs" );
 		}
 
 		if ( manager.hosting == true || manager.connecting == true )
@@ -67,15 +86,49 @@ public class GUIManager : MonoBehaviour
 			GUI.Window ( 3, new Rect ( 125, 426, 575, 180 ), ChatBar, "Chat with friends in the same game." );
 		}
 
-		if ( manager.hosting == false && manager.connecting == false )
-			manager.moniker = GUI.TextField ( new Rect ( 100, 290, 100, 20 ), manager.moniker );
+		if ( manager.hosting == true )
+		{
+
+			if ( GUI.Button ( new Rect ( 130, 400, 110, 20 ), "Disable Hosting" ))
+				manager.SendMessage ( "ServerControl" );
+		}
+	}
+
+
+	void SavedIPs ( int wid )
+	{
+
+		savedIPsScrollPosition = GUILayout.BeginScrollView( savedIPsScrollPosition, GUILayout.Width( 0 ), GUILayout.Height( 148 ));
+
+		int tempInt = 0;
+		while ( tempInt < savedIPs.Count )
+		{
+
+			if ( GUILayout.Button ( savedIPs[tempInt] ))
+			{
+
+				if ( manager.moniker == "Moniker" || String.IsNullOrEmpty ( manager.moniker.Trim ()))
+				{
+					
+					notificationManager.notificationText = "Please enter a moniker ( name ) and try again.";
+					notificationManager.error = true;
+				} else {
+					
+					Network.Connect ( manager.textfieldIP, 25565 );
+					manager.connecting = true;
+				}
+			}
+			tempInt++;
+		}
+
+		GUILayout.EndScrollView ();
 	}
 
 
 	void ChatBar ( int wid )
 	{
 
-		scrollPosition = GUILayout.BeginScrollView( scrollPosition, GUILayout.Width( 0 ), GUILayout.Height( 100 ));
+		chatScrollPosition = GUILayout.BeginScrollView( chatScrollPosition, GUILayout.Width( 0 ), GUILayout.Height( 100 ));
 		
 		if ( messageList.Count > 0 )
 		{
