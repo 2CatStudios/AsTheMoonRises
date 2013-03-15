@@ -17,7 +17,7 @@ public class Manager : MonoBehaviour
 	GUIManager guimanager;
 	GUIText countdownText;
 
-	public float runningVersion = 0.01f;
+	public float runningVersion = 1;
 	
 	internal bool hosting = false;
 	internal bool connected = false;
@@ -141,6 +141,14 @@ public class Manager : MonoBehaviour
 			connected = false;
 
 			guimanager.messageList.Clear ();
+
+			gamesWon = 0;
+			gamesLost = 0;
+			opponentMoniker = "";
+			opponentReady = false;
+			ready = false;
+			randNumber = 0;
+			message = "Enter smack-talk here";
 		}
 	}
 
@@ -186,6 +194,14 @@ public class Manager : MonoBehaviour
 			connected = false;
 
 			guimanager.messageList.Clear ();
+
+			gamesWon = 0;
+			gamesLost = 0;
+			opponentMoniker = "";
+			opponentReady = false;
+			ready = false;
+			randNumber = 0;
+			message = "Enter smack-talk here";
 		}
 	}
 
@@ -278,7 +294,7 @@ public class Manager : MonoBehaviour
 		randNumber = UnityEngine.Random.Range ( 0, 5 );
 
 		if ( connected == true )
-			networkView.RPC ( "FindWinner", RPCMode.Server, randNumber );
+			networkView.RPC ( "FindWinner", RPCMode.Server, randNumber, Convert.ToInt32 ( guessedNumber ));
 
 		ready = false;
 		opponentReady = false;
@@ -287,16 +303,48 @@ public class Manager : MonoBehaviour
 
 
 	[RPC]
-	void FindWinner ( int oppNumber )
+	void FindWinner ( int oppNumber, int oppGuess )
 	{
 
+		if ( hosting == true )
+			networkView.RPC ( "FindWinner", RPCMode.Others, randNumber, Convert.ToInt32 ( guessedNumber ));
+
 		if ( oppNumber == randNumber )
-			UnityEngine.Debug.Log ( oppNumber + " " + randNumber + " Tie!" );
-		else
+		{
+
+			gamesWon++;
+			gamesLost++;
+			notificationManager.notificationText = oppNumber + " - " + randNumber + " It's a tie!";
+		} else {
 			if ( oppNumber > randNumber )
-				UnityEngine.Debug.Log ( oppNumber + " " + randNumber + " You loose" );
-			else
-				UnityEngine.Debug.Log ( randNumber + " " + oppNumber + " You win" );
+			{
+				
+				if ( Convert.ToInt32 ( guessedNumber ) == oppNumber )
+				{
+
+					gamesLost++;
+					gamesWon++;
+					notificationManager.notificationText = "You would have lost, but you guessed their number!";
+				} else {
+
+					gamesLost++;
+					notificationManager.notificationText = oppNumber + " - " + randNumber + " You've lost!";
+			}
+		} else {
+
+				if ( oppGuess == randNumber )
+				{
+
+					gamesLost++;
+					gamesWon++;
+					notificationManager.notificationText = "You would have won, but they guessed your number!";
+				} else {
+				gamesWon++;
+				notificationManager.notificationText = randNumber + " - " + oppNumber + " You've won!";
+				}
+			}
+		}
+		notificationManager.prompt = true;
 	}
 
 
@@ -305,7 +353,9 @@ public class Manager : MonoBehaviour
 	{
 
 		opponentMoniker = opponentName;
-		networkView.RPC ( "ExchangeNames", RPCMode.Others, moniker );
+
+		if ( hosting == true )
+			networkView.RPC ( "ExchangeNames", RPCMode.Others, moniker );
 	}
 
 
@@ -317,6 +367,21 @@ public class Manager : MonoBehaviour
 	}
 
 
+	void OnPlayerDisconnected ( NetworkPlayer player )
+	{
+
+		Network.RemoveRPCs(player);
+		Network.DestroyPlayerObjects(player);
+		gamesWon = 0;
+		gamesLost = 0;
+		opponentMoniker = "";
+		opponentReady = false;
+		ready = false;
+		randNumber = 0;
+		message = "Enter smack-talk here";
+	}
+	
+	
 	void OnFailedToConnect ( NetworkConnectionError error )
 	{
 
