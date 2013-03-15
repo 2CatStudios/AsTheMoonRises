@@ -7,22 +7,27 @@ public class GUIManager : MonoBehaviour
 {
 
 	Manager manager;
+	NotificationManager notificationManager;
 
 	internal Vector2 chatScrollPosition;
 	internal List<String> messageList = new List<String>();
+
+	int zero = 0;
 
 	Vector2 savedIPsScrollPosition;
 	internal List<String> savedIPs = new List<String>();
 	
 	public GUISkin guiskin;
-
+	public GUIText gamesWon;
+	public GUIText gamesLost;
 
 	/*
 		GUI.Window 0 is Error
 		GUI.Window 1 is Prompt
-		GUI.Window 2 is Message
+		GUI.Window 2 is TextfieldPrompt
 		GUI.Window 3 is ChatBar
 		GUI.Window 4 is SavedIPs
+		GUI.Window 5 is GameWindow
 	*/
 
 
@@ -30,6 +35,7 @@ public class GUIManager : MonoBehaviour
 	{
 
 		manager = GameObject.FindGameObjectWithTag ( "Manager" ).GetComponent<Manager>();
+		notificationManager = GameObject.FindGameObjectWithTag ( "Manager" ).GetComponent<NotificationManager>();
 	}
 
 
@@ -38,7 +44,7 @@ public class GUIManager : MonoBehaviour
 
 		GUI.skin = guiskin;
 
-		if ( manager.connecting == false && manager.hosting == false )
+		if ( manager.connected == false && manager.hosting == false )
 		{
 
 			if ( GUI.Button ( new Rect ( 100, 200, 100, 20 ), "Enable Hosting" ))
@@ -56,12 +62,20 @@ public class GUIManager : MonoBehaviour
 
 			manager.moniker = GUI.TextField ( new Rect ( 100, 315, 100, 20 ), manager.moniker );
 			GUI.Window ( 4, new Rect ( 300, 250, 400, 180 ), SavedIPs, "Saved IP Addresses" );
+
+			gamesWon.text = "";
+			gamesLost.text = "";
 		}
 
-		if ( manager.hosting == true || manager.connecting == true )
+		if ( manager.hosting == true || manager.connected == true )
 		{
 
 			GUI.Window ( 3, new Rect ( 125, 426, 575, 180 ), ChatBar, "Chat with friends in the same game." );
+			gamesWon.text = manager.moniker + "'s games: " + manager.gamesWon;
+			if ( Network.connections.Length > 0 )
+				gamesLost.text = manager.opponentMoniker + "'s games: " + manager.gamesLost;
+			else
+				gamesLost.text = "No player connected";
 		}
 
 		if ( manager.hosting == true )
@@ -69,9 +83,19 @@ public class GUIManager : MonoBehaviour
 
 			if ( GUI.Button ( new Rect ( 130, 400, 110, 20 ), "Disable Hosting" ))
 				manager.SendMessage ( "ServerControl" );
+
+			if ( GUI.Button ( new Rect ( 250, 400, 85, 20 ), "Start Round" ) && manager.roundInProgress == false )
+				if ( Network.connections.Length > 0 )
+					manager.networkView.RPC ( "SetupNetworkRound" , RPCMode.All, zero );
+				else
+				{
+
+					notificationManager.notificationText = "There are no connected players!";
+					notificationManager.error = true;
+				}
 		}
 
-		if ( manager.connecting == true )
+		if ( manager.connected == true )
 		{
 			
 			if ( GUI.Button ( new Rect ( 130, 400, 110, 20 ), "Disconnect" ))
@@ -116,10 +140,10 @@ public class GUIManager : MonoBehaviour
 		}
 		GUILayout.EndScrollView ();
 
-		if ( GUI.Button ( new Rect ( 12, 130, 50, 40), "Send" ) || Event.current.type ==  EventType.KeyDown && ( Event.current.keyCode == KeyCode.Return && String.IsNullOrEmpty ( manager.message.Trim ()) == false ))
+		if ( GUI.Button ( new Rect ( 12, 130, 50, 40), "Send" ) && String.IsNullOrEmpty ( manager.message.Trim ()) == false || Event.current.type == EventType.KeyDown && ( Event.current.keyCode == KeyCode.Return && String.IsNullOrEmpty ( manager.message.Trim ()) == false ))
 		{
 			
-			manager.networkView.RPC ( "RecieveMessage", RPCMode.All, manager.moniker + "| " + manager.message.Trim ());
+			manager.networkView.RPC ( "RecieveMessage", RPCMode.All, manager.moniker + "| " + manager.message.Trim (), true);
 			manager.message = "";
 		}
 		

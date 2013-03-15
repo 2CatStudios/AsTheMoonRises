@@ -10,30 +10,44 @@ public class Manager : MonoBehaviour
 	string path;
 	static string macPath = "/Users/" + Environment.UserName + "/Library/Application Support/2Cat Studios/AsTheMoonRises";
 	static string windowsPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\2Cat Studios\\AsTheMoonRises";
-	internal string chatLogsPath;
 	internal string supportFilesPath;
 
+	AudioSource audioSource;
 	NotificationManager notificationManager;
 	GUIManager guimanager;
+	GUIText countdownText;
 
 	public float runningVersion = 0.01f;
 	
 	internal bool hosting = false;
-	internal bool connecting = false;
+	internal bool connected = false;
 
 	internal string textfieldIP = "192.168.1.1";
 	internal string moniker;
+	internal string opponentMoniker;
 	internal string message = "Enter smack-talk here";
+	public AudioClip messageNotificationSound;
+	public AudioClip countdownTimerSound;
+	public AudioClip countdownTimerFinalSound;
 
-	DateTime lastChatDate;
-	internal int totalChatsToday;
-	internal string currentChatPath;
+	internal bool roundInProgress = false;
+	internal string guessedNumber = "";
+
+	internal bool ready = false;
+	bool opponentReady = false;
+
+	internal int randNumber;
+
+	internal int gamesWon = 0;
+	internal int gamesLost = 0;
+
 
 	void Start ()
 	{
 
 		notificationManager = gameObject.GetComponent<NotificationManager>();
 		guimanager = GameObject.FindGameObjectWithTag ( "MainCamera" ).GetComponent<GUIManager>();
+		countdownText = GameObject.FindGameObjectWithTag ( "CountdownText" ).guiText;
 
 		if(Environment.OSVersion.ToString().Substring (0, 4) == "Unix")
 			path = macPath;
@@ -41,12 +55,9 @@ public class Manager : MonoBehaviour
 			path = windowsPath;
 
 		supportFilesPath = path + Path.DirectorySeparatorChar + "SupportFiles";
-		chatLogsPath = path + Path.DirectorySeparatorChar + "ChatLogs";
 
 		if ( !Directory.Exists ( supportFilesPath ))
 			Directory.CreateDirectory ( supportFilesPath );
-		if ( !Directory.Exists ( chatLogsPath ))
-			Directory.CreateDirectory ( chatLogsPath );
 
 		if ( !File.Exists ( supportFilesPath + Path.DirectorySeparatorChar + "Settings.txt" ))
 		{
@@ -58,8 +69,6 @@ public class Manager : MonoBehaviour
 
 		String[] tempSettingsString = File.ReadAllLines ( supportFilesPath + Path.DirectorySeparatorChar + "Settings.txt" );
 		moniker = tempSettingsString[0];
-		totalChatsToday = Convert.ToInt32 ( tempSettingsString[1] );
-		lastChatDate = Convert.ToDateTime ( tempSettingsString[2] );
 
 		if ( !File.Exists ( supportFilesPath + Path.DirectorySeparatorChar + "SavedIPs.txt" ))
 			File.Create ( supportFilesPath + Path.DirectorySeparatorChar + "SavedIPs.txt" );
@@ -82,8 +91,7 @@ public class Manager : MonoBehaviour
 			}
 		}
 
-		if ( lastChatDate != DateTime.Today )
-			totalChatsToday = 0;
+		audioSource = GameObject.FindGameObjectWithTag ( "MainCamera" ).GetComponent<AudioSource>();
 	}
 
 
@@ -113,35 +121,24 @@ public class Manager : MonoBehaviour
 
 				Network.InitializeServer ( 2, 25565, false );
 				hosting = true;
-				connecting = false;
-
-				currentChatPath = chatLogsPath + Path.DirectorySeparatorChar + DateTime.Today.Day + ":" + DateTime.Today.Month + ":" + DateTime.Today.Year + " " + totalChatsToday + ".txt";
-				lastChatDate = DateTime.Today;
+				connected = false;
 
 				String[] tempSettingsString = File.ReadAllLines ( supportFilesPath + Path.DirectorySeparatorChar + "Settings.txt" );
 				tempSettingsString[0] = moniker;
 				
 				StreamWriter textwriter = new StreamWriter ( supportFilesPath + Path.DirectorySeparatorChar + "Settings.txt", false );
-				textwriter.WriteLine ( tempSettingsString[0] + Environment.NewLine + tempSettingsString[1] + Environment.NewLine + DateTime.Today );
+				textwriter.WriteLine ( tempSettingsString[0] );
 				textwriter.Close ();
 	
-				networkView.RPC ( "RecieveMessage", RPCMode.AllBuffered, "Chat started at " + DateTime.Now );
+				networkView.RPC ( "RecieveMessage", RPCMode.AllBuffered, "Chat started at " + DateTime.Now, false );
 			}
 		} else {
 
-			networkView.RPC ( "RecieveMessage", RPCMode.All, "Chat ended at " + DateTime.Now );
+			networkView.RPC ( "RecieveMessage", RPCMode.All, "Chat ended at " + DateTime.Now, true );
 
 			Network.Disconnect();
 			hosting = false;
-			connecting = false;
-
-			totalChatsToday++;
-			String[] tempSettingsString = File.ReadAllLines ( supportFilesPath + Path.DirectorySeparatorChar + "Settings.txt" );
-			tempSettingsString[1] = totalChatsToday.ToString ();
-
-			StreamWriter textwriter = new StreamWriter ( supportFilesPath + Path.DirectorySeparatorChar + "Settings.txt", false );
-			textwriter.WriteLine ( tempSettingsString[0] + Environment.NewLine + tempSettingsString[1] + Environment.NewLine + DateTime.Today );
-			textwriter.Close ();
+			connected = false;
 
 			guimanager.messageList.Clear ();
 		}
@@ -151,54 +148,42 @@ public class Manager : MonoBehaviour
 	void ConnectionControl ()
 	{
 
-		if ( connecting == false )
+		if ( connected == false )
 		{
-			
+
 			if ( textfieldIP == "192.168.1.1" || String.IsNullOrEmpty ( textfieldIP.Trim ()) )
 			{
-				
+
 				notificationManager.notificationText = "Please enter an IP address and try again.";
 				notificationManager.error = true;
 			} else {
 				if ( moniker == "Moniker" || String.IsNullOrEmpty ( moniker.Trim ()))
 				{
-					
+
+
 					notificationManager.notificationText = "Please change your moniker ( name ) and try again.";
 					notificationManager.error = true;
 				} else {
-				
+
 					Network.Connect ( textfieldIP, 25565 );
 					hosting = false;
-					connecting = true;
-				
-					currentChatPath = chatLogsPath + Path.DirectorySeparatorChar + DateTime.Today.Day + ":" + DateTime.Today.Month + ":" + DateTime.Today.Year + " " + totalChatsToday + ".txt";
-					lastChatDate = DateTime.Today;
-				
+					connected = true;
+									
 					String[] tempSettingsString = File.ReadAllLines ( supportFilesPath + Path.DirectorySeparatorChar + "Settings.txt" );
 					tempSettingsString[0] = moniker;
 				
 					StreamWriter textwriter = new StreamWriter ( supportFilesPath + Path.DirectorySeparatorChar + "Settings.txt", false );
-					textwriter.WriteLine ( tempSettingsString[0] + Environment.NewLine + tempSettingsString[1] + Environment.NewLine + DateTime.Today );
+					textwriter.WriteLine ( tempSettingsString[0] );
 					textwriter.Close ();
-				
-					networkView.RPC ( "RecieveMessage", RPCMode.All, moniker + " has joined this chat." );
 				}
 			}
 		} else {
-			
+
+			networkView.RPC ( "RecieveMessage", RPCMode.All, moniker + " has left this chat.", false );
+
 			Network.Disconnect();
 			hosting = false;
-			connecting = false;
-			
-			totalChatsToday++;
-			String[] tempSettingsString = File.ReadAllLines ( supportFilesPath + Path.DirectorySeparatorChar + "Settings.txt" );
-			tempSettingsString[1] = totalChatsToday.ToString ();
-			
-			StreamWriter textwriter = new StreamWriter ( supportFilesPath + Path.DirectorySeparatorChar + "Settings.txt", false );
-			textwriter.WriteLine ( tempSettingsString[0] + Environment.NewLine + tempSettingsString[1] + Environment.NewLine + DateTime.Today );
-			textwriter.Close ();
-
-			networkView.RPC ( "RecieveMessage", RPCMode.All, moniker + " has left this chat." );
+			connected = false;
 
 			guimanager.messageList.Clear ();
 		}
@@ -206,22 +191,131 @@ public class Manager : MonoBehaviour
 
 
 	[RPC]
-	void RecieveMessage (string recievedMessage)
+	void RecieveMessage ( string recievedMessage, bool playSound )
 	{
-
-		StreamWriter textwriter = new StreamWriter ( currentChatPath, true );
-		textwriter.WriteLine ( recievedMessage );
-		textwriter.Close ();
-
+		
+		if ( playSound == true )
+			audioSource.PlayOneShot ( messageNotificationSound );
 		guimanager.messageList.Add ( recievedMessage );
 		guimanager.chatScrollPosition.y += Mathf.Infinity;
 	}
 
-	void OnPlayerConnected ( NetworkPlayer player )
+
+	[RPC]
+	void SetupNetworkRound ( int switchCase )
 	{
 
-		Debug.Log ( player.ipAddress + " Connected through| " + player.port );
+		switch ( switchCase )
+		{
+
+			case 0:
+				notificationManager.textfieldPrompt = true;
+			break;
+
+			case 1:
+
+				if ( connected == true )
+				{
+
+					ready = true;
+					networkView.RPC ( "ConnectedReady", RPCMode.Server );
+				}
+
+				if ( hosting == true )
+				{
+				
+					ready = true;
+
+					if ( opponentReady == true )
+						SetupNetworkRound ( 2 );
+				}	
+				break;
+
+			case 2:
+				networkView.RPC ( "CountdownTimer" , RPCMode.All );
+			break;
+
+			default:
+				UnityEngine.Debug.Log ( "ERROR IN SWITCH-CASE" );
+			break;
+		}
 	}
+
+	[RPC]
+	IEnumerator ConnectedReady ()
+	{
+
+		opponentReady = true;
+
+		if ( ready == true )
+			SetupNetworkRound ( 2 );
+		else
+		{
+
+			yield return new WaitForSeconds ( 0.2f );
+			ConnectedReady ();
+		}
+	}
+
+
+	[RPC]
+	IEnumerator CountdownTimer ()
+	{
+
+		roundInProgress = true;
+		countdownText.text = "3";
+		audioSource.PlayOneShot ( countdownTimerSound );
+		yield return new WaitForSeconds ( 1 );
+		countdownText.text = "2";
+		audioSource.PlayOneShot ( countdownTimerSound );
+		yield return new WaitForSeconds ( 1 );
+		countdownText.text = "1";
+		audioSource.PlayOneShot ( countdownTimerSound );
+		yield return new WaitForSeconds ( 1 );
+		countdownText.text = "";
+		audioSource.PlayOneShot ( countdownTimerFinalSound );
+
+		randNumber = UnityEngine.Random.Range ( 0, 5 );
+
+		if ( connected == true )
+			networkView.RPC ( "FindWinner", RPCMode.Server, randNumber );
+
+		ready = false;
+		opponentReady = false;
+		roundInProgress = false;
+	}
+
+
+	[RPC]
+	void FindWinner ( int oppNumber )
+	{
+
+		if ( oppNumber == randNumber )
+			UnityEngine.Debug.Log ( oppNumber + " " + randNumber + " Tie!" );
+		else
+			if ( oppNumber > randNumber )
+				UnityEngine.Debug.Log ( oppNumber + " " + randNumber + " You loose" );
+			else
+				UnityEngine.Debug.Log ( randNumber + " " + oppNumber + " You win" );
+	}
+
+
+	[RPC]
+	void ExchangeNames ( string opponentName )
+	{
+
+		opponentMoniker = opponentName;
+		networkView.RPC ( "ExchangeNames", RPCMode.Others, moniker );
+	}
+
+
+	void OnConnectedToServer()
+	{
+
+		networkView.RPC ( "RecieveMessage", RPCMode.All, moniker + " has joined this chat.", true );
+		networkView.RPC ( "ExchangeNames", RPCMode.Others, moniker );
+	}
+
 
 	void OnFailedToConnect ( NetworkConnectionError error )
 	{
