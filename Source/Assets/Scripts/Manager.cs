@@ -27,6 +27,8 @@ public class Manager : MonoBehaviour
 	internal string opponentMoniker;
 	internal string message = "Enter smack-talk here";
 	public AudioClip messageNotificationSound;
+	public AudioClip[] tauntSound = new AudioClip[4];
+	int tauntInt = 0;
 	public AudioClip countdownTimerSound;
 	public AudioClip countdownTimerFinalSound;
 
@@ -129,7 +131,7 @@ public class Manager : MonoBehaviour
 				StreamWriter textwriter = new StreamWriter ( supportFilesPath + Path.DirectorySeparatorChar + "Settings.txt", false );
 				textwriter.WriteLine ( tempSettingsString[0] );
 				textwriter.Close ();
-	
+
 				networkView.RPC ( "RecieveMessage", RPCMode.AllBuffered, "Chat started at " + DateTime.Now, false );
 			}
 		} else {
@@ -210,10 +212,22 @@ public class Manager : MonoBehaviour
 	void RecieveMessage ( string recievedMessage, bool playSound )
 	{
 		
-		if ( playSound == true )
+		if ( playSound == true && guimanager.focusedWindow != 3 )
 			audioSource.PlayOneShot ( messageNotificationSound );
 		guimanager.messageList.Add ( recievedMessage );
 		guimanager.chatScrollPosition.y += Mathf.Infinity;
+	}
+
+
+	[RPC]
+	void RecieveTaunt ()
+	{
+
+		audioSource.PlayOneShot ( tauntSound[tauntInt] );
+		tauntInt += 1;
+
+		if ( tauntInt >= tauntSound.Length )
+			tauntInt = 0;
 	}
 
 

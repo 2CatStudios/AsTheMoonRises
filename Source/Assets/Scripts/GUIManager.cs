@@ -60,7 +60,8 @@ public class GUIManager : MonoBehaviour
 			if ( GUI.Button ( new Rect ( 100, 275, 100, 20 ), "Save IP" ))
 				manager.SendMessage ( "SaveIP" );
 
-			manager.moniker = GUI.TextField ( new Rect ( 100, 315, 100, 20 ), manager.moniker );
+			GUI.Label ( new Rect ( 100, 310, 100, 20 ), "Enter your name" );
+			manager.moniker = GUI.TextField ( new Rect ( 100, 330, 100, 20 ), manager.moniker );
 			GUI.Window ( 4, new Rect ( 300, 250, 400, 180 ), SavedIPs, "Saved IP Addresses" );
 
 			gamesWon.text = "";
@@ -76,30 +77,6 @@ public class GUIManager : MonoBehaviour
 				gamesLost.text = manager.opponentMoniker + "'s games: " + manager.gamesLost;
 			else
 				gamesLost.text = "No player connected";
-		}
-
-		if ( manager.hosting == true )
-		{
-
-			if ( GUI.Button ( new Rect ( 130, 400, 110, 20 ), "Disable Hosting" ))
-				manager.SendMessage ( "ServerControl" );
-
-			if ( GUI.Button ( new Rect ( 250, 400, 85, 20 ), "Start Round" ) && manager.roundInProgress == false )
-				if ( Network.connections.Length > 0 )
-					manager.networkView.RPC ( "SetupNetworkRound" , RPCMode.All, zero );
-				else
-				{
-
-					notificationManager.notificationText = "There are no connected players!";
-					notificationManager.error = true;
-				}
-		}
-
-		if ( manager.connected == true )
-		{
-			
-			if ( GUI.Button ( new Rect ( 130, 400, 110, 20 ), "Disconnect" ))
-				manager.SendMessage ( "ConnectionControl" );
 		}
 	}
 
@@ -122,8 +99,21 @@ public class GUIManager : MonoBehaviour
 	}
 
 
+	public int focusedWindow
+	{
+		
+		get
+		{
+			
+			System.Reflection.FieldInfo field = typeof ( GUI ).GetField ( "focusedWindow", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static );
+			return ( int ) field.GetValue ( null );	
+		}
+	}
+
+
 	void ChatBar ( int wid )
 	{
+
 
 		chatScrollPosition = GUILayout.BeginScrollView( chatScrollPosition, GUILayout.Width( 0 ), GUILayout.Height( 100 ));
 		
@@ -140,13 +130,43 @@ public class GUIManager : MonoBehaviour
 		}
 		GUILayout.EndScrollView ();
 
-		if ( GUI.Button ( new Rect ( 12, 130, 50, 40), "Send" ) && String.IsNullOrEmpty ( manager.message.Trim ()) == false || Event.current.type == EventType.KeyDown && ( Event.current.keyCode == KeyCode.Return && String.IsNullOrEmpty ( manager.message.Trim ()) == false ))
+		if ( GUI.Button ( new Rect ( 12, 125, 100, 20), "Send" ) && String.IsNullOrEmpty ( manager.message.Trim ()) == false || Event.current.type == EventType.KeyDown && ( Event.current.keyCode == KeyCode.Return && String.IsNullOrEmpty ( manager.message.Trim ()) == false ))
 		{
 			
 			manager.networkView.RPC ( "RecieveMessage", RPCMode.All, manager.moniker + "| " + manager.message.Trim (), true);
 			manager.message = "";
 		}
+
+		if ( manager.hosting == true )
+		{
+			
+			if ( GUI.Button ( new Rect ( 122, 125, 110, 20 ), "Disable Hosting" ))
+				manager.SendMessage ( "ServerControl" );
+			
+			if ( GUI.Button ( new Rect ( 242, 125, 100, 20 ), "Start Round" ) && manager.roundInProgress == false )
+				if ( Network.connections.Length > 0 )
+					manager.networkView.RPC ( "SetupNetworkRound" , RPCMode.All, zero );
+				else
+				{
+				
+				notificationManager.notificationText = "There are no connected players!";
+				notificationManager.error = true;
+				}
+
+			if ( GUI.Button ( new Rect ( 352, 125, 100, 20 ), "Send Taunt" ))
+				manager.networkView.RPC ( "RecieveTaunt", RPCMode.All );
+		}
 		
-		manager.message = GUI.TextField ( new Rect ( 65, 130, 500, 40 ), manager.message );
+		if ( manager.connected == true )
+		{
+			
+			if ( GUI.Button ( new Rect ( 122, 125, 110, 20 ), "Disconnect" ))
+				manager.SendMessage ( "ConnectionControl" );
+
+			if ( GUI.Button ( new Rect ( 242, 125, 100, 20 ), "Send Taunt" ))
+				manager.networkView.RPC ( "RecieveTaunt", RPCMode.All );
+		}
+		
+		manager.message = GUI.TextField ( new Rect ( 12, 150, 551, 20 ), manager.message );
 	}
 }
